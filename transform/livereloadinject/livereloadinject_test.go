@@ -62,3 +62,48 @@ func TestLiveReloadInject(t *testing.T) {
 		c.Assert(apply("<h1>No match</h1>"), qt.Equals, "<h1>No match</h1>")
 	})
 }
+
+func TestLiveReloadInjectInferHostAndPort(t *testing.T) {
+	c := qt.New(t)
+	apply := func(u *url.URL, s string) string {
+		out := new(bytes.Buffer)
+		tr := transform.New(New(*u))
+		_ = tr.Apply(out, strings.NewReader(s))
+
+		return out.String()
+	}
+
+	tests := []struct {
+		name   string
+		rawUrl string
+		want   string
+	}{
+		{
+			name:   "no host and no port",
+			rawUrl: "http:///subpath",
+			want: `<script src="/subpath/livereload.js?mindelay=10&amp;v=2&amp;path=subpath/livereload" data-no-instant defer></script>`,
+		},
+		{
+			name: "no host",
+			rawUrl: "http://:1234/subpath",
+			want: `<script src="/subpath/livereload.js?mindelay=10&amp;v=2&amp;port=1234&amp;path=subpath/livereload" data-no-instant defer></script>`,
+		},
+		{
+			name: "no port",
+			rawUrl: "http://host/subpath",
+			want: `<script src="/subpath/livereload.js?mindelay=10&amp;v=2&amp;path=subpath/livereload" data-no-instant defer></script>`,
+		},
+	}
+
+	for _, tt := range tests {
+		c.Run(tt.name, func(c *qt.C) {
+			u, err := url.Parse(tt.rawUrl)
+			if err != nil {
+				c.Error("Parsing test URL failed", err)
+				return
+			}
+
+			c.Assert(apply(u, "<html><head>"), qt.Equals, "<html><head>"+tt.want)
+		})
+	}
+}

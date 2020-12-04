@@ -57,7 +57,9 @@ func New(baseURL url.URL) transform.Transformer {
 		path := strings.TrimSuffix(baseURL.Path, "/")
 
 		src := path + "/livereload.js?mindelay=10&v=2"
-		src += "&port=" + baseURL.Port()
+		if port := baseURL.Port(); port != "" {
+			src += "&port=" + port
+		}
 		src += "&path=" + strings.TrimPrefix(path+"/livereload", "/")
 
 		c := make([]byte, len(b))

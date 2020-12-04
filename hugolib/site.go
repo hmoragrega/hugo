@@ -1702,8 +1702,14 @@ func (s *Site) renderAndWritePage(statCounter *uint64, name string, targetPath s
 
 		if s.running() && s.Cfg.GetBool("watch") && !s.Cfg.GetBool("disableLiveReload") {
 			pd.LiveReloadBaseURL = s.PathSpec.BaseURL.URL()
-			if s.Cfg.GetInt("liveReloadPort") != -1 {
-				pd.LiveReloadBaseURL.Host = fmt.Sprintf("%s:%d", pd.LiveReloadBaseURL.Hostname(), s.Cfg.GetInt("liveReloadPort"))
+			switch port := s.Cfg.GetInt("liveReloadPort"); port {
+			case 0:
+				// Removes the port from the liveReload base URL
+				pd.LiveReloadBaseURL.Host = pd.LiveReloadBaseURL.Hostname()
+			case -1:
+				// do nothing
+			default:
+				pd.LiveReloadBaseURL.Host = fmt.Sprintf("%s:%d", pd.LiveReloadBaseURL.Hostname(), port)
 			}
 		}
 
